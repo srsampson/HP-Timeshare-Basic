@@ -1,0 +1,118 @@
+;Setup for Simh for HP2000 Access MCP tape 2test.
+;(c) Michael Gemeny, May 5 2002, ... Nov 11 2002
+;Requires: mcp4b.tap mtload.bin
+;Also see: Notes at end of this file!
+;
+set cpu 2100
+set cpu 32K
+set cpu FP
+;
+;Disables for unused devices.
+set ptr dis
+set ptp dis
+set lpt dis
+;
+;Set up for interconnect.
+;
+set ipli ena
+set ipli dev=10
+att -l ipli 4020
+att -l iplo 4021
+;
+;Place holder for lower select of interconnect
+;set ptr dev=10
+;
+;Place holder for upper select of interconnect
+;set ptp dev=11
+;The following attach was used to configure and link the IOP image.
+;Note: The trap below needs to get hit twice before removal,
+;      before the IO module can be loaded. This session is documented
+;      at the end of the asiop script, because it has the IOP linkage maps
+;      for that processor. Yes it was done here but should be kept there.
+;Should anyone doubt the logic in using a paper tape punch as
+;a stand-in for an interconnect kit, I would call your attention
+;to the IOPs own loader. The listing can be found in the HP 2000
+;Access Operator's Manual (22687-90005) Appendix D pages D-2 and D-3
+;Where it would seem that, for this job, the two are interchangeable.
+;attach ptp iopimg.bin
+;
+set tty dev=12
+;attach tty2 log {That didn't do what I expected.}
+;
+set clk dev=13
+;
+;
+;This was just for testing. Access failed to format this drive.
+;Set up for 7900 disk drive
+;set dqc dis
+;set dpc dev=14             
+;set dpc 13210A
+;attach dpc0 7900.dsk
+;
+;Set up for 2883 disk drive DQ
+set dqc dev=14
+attach dqc0 2883a.dsk
+attach dqc1 2883b.dsk
+;
+;And last is the tape drive.
+set msd dev=16
+set msc 13181A
+set msc0 locked
+attach msc0 mcp4b.tap
+;attach msc1 "your file 1"
+;attach msc2 "your file 2"
+;attach mcs3 "your file 3"
+;
+;
+;let's "Rock and Roll"
+load mtload.bin
+run 2000
+;You may now begin the configuration dialog in the
+;HP 2000 Access Operator's Manual (22687-90005)
+;Page 4-6 Step 2.For 2100 processors. L
+;
+;
+;
+;Note: The following note has a better work-around. See below.
+;
+;Note: As of this time MCP will hang after the "2754?" question.
+; this seems to be a timing bug in the tape drive simulation.
+; the work-around is to set a trap at 2770(8), restart MCP at 2000(8),
+; let trap get sprung, remove trap, run simulation. (Oops, you will need 
+; to let the trap get sprung twice if it is the IO module you want. For
+; log of that session see the end of asiop)
+;
+;     c:>hp2100
+;     HP 2100 simulator V2.9-7 {also V2.10-0b2} (under V2.10-0b3 I
+;                              cant get "LOAD WHICH MODULE", and under
+;                              V2.10-0b4 I cant even get to the "2754?"
+;                              question)
+;
+;OK! I fixed the tape drive by making it really fast! See below. MWG Nov 11,2002
+;
+;int32 msc_ctime = 20;					/* command wait */
+;int32 msc_gtime = 20;					/* gap stop time */
+;int32 msc_rtime = 100;					/* rewind wait */
+;int32 msc_xtime = 10;					/* data xfer time */
+;
+;
+;     sim> do asmain        {this file}
+;     MAG TAPE SELECT CODE?16
+;     2754?Y
+;     LOAD WHICH MODULE? 2883   {Or any other module you want}
+;     SYSTEM GENERATION? Y
+;     UPDATE? N
+;     SYSTEM IDENTIFICATION? TEST
+;     CONFIGURATION OPTIONS? Y
+;     DISC OR FORMAT COMMANDS? FORMAT-0
+;     DISK OR FORMAT COMMANDS?   {Just hit return}
+;     DISK NUMBER 0 NOT LABLED FOR TSB
+;     DO YOU WANT IT LABLED? Y
+;     MLOCK OR MUNLOCK COMMANDS?   {Just hit return}
+;     NUMBER OF DIRECTORY TRACKS PER DISC?   {Just hit return}
+;     NUMBER OF ID TRACKS?   {Just hit return}
+;     DATE?  111/11
+;     TIME?  1111
+;     HP22687A-1812
+;
+;     

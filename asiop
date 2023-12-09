@@ -1,0 +1,240 @@
+;Setup for Simh for HP2000 Access IOP test.
+;Michael Gemeny, May 20 2002
+;Requires: iopimg.bin
+;Also see: Notes at end of this file!
+;
+set cpu 2100
+set cpu 32k
+set cpu iop
+;
+;Disable default devices which are in the way
+;set tty dis
+set mtd dis
+;Oops, I can't get tty to disable. I guess I'll just 
+;find a place for it to live that's out of the way.
+set tty dev=21
+;How bout that. No empty slots!
+;
+;Set up for Time Base Generator
+set clk dev=10
+;
+;Set up for multiplexer
+set mux dev=11
+set muxm dev=13
+attach mux 2323
+;
+;Setup for interconnect
+set ipli ena
+set ipli dev=14
+att -cw ipli 4021
+att -cw iplo 4020
+;
+;set up for paper tape reader (PR0)
+set ptr dev=16
+;attach ptr "your file"
+;
+;set up for paper tape punch (PP0)
+set ptp dev=17
+detach ptp
+;attach ptp "your file"
+;
+;set up for line printer (LP0)
+;
+;The LPS printer is a 2767 which is Subtype 2 under Access
+;
+;set lps enabled
+;set lps printer
+;set lps dev=20
+;detach lps
+;attach lps "your file"
+;
+;
+;The SIMH project uses the part number of the interface card
+;Access uses the model number of the printer. I have not been able to
+;find the model number of the simulated printer. I don't think it is 2607,2610,2614
+;all of which are subtype 0 under Access. Subtype 1 is 2613,2617,2618, subtype 2
+;is 2767 and subtype 3 is 2778. So I'm going with subtype 1 for now. <<<  HELP!
+set lpt dev=20
+detach lpt
+;attach lpt "your file"
+;
+; set terminals to be 8bit lower case capable (support tek4010)
+set muxl 8b
+;Now lets see that front panel glow!
+load iopimg.bin
+;
+;(I/O PROCESSOR MAY BE STARTED AT LOCATION 2)!
+;
+;
+;For the IOP PANIC routine, run at 2000
+;run 2000
+;
+;If running PANIC without the IOP instructions enabled, start it twice
+;run 2000
+;
+;If runing the real IOP code run it from location 2
+run 2
+; Exit simh when main system processor disconnect
+q
+;
+;
+;The following is the log of the IOP configuration
+;which was done on a simulated main processor with
+;a tape punch standing in for the interconnect kit.
+;See asmain
+;Logging to file "log"
+;sim> do asmain
+;do> set cpu 2100
+;do> set ptr dev=10
+;do> set ptp dev=11
+;do> attach ptp iopimg.bin
+;do> set tty dev=12
+;do> set clk dev=13
+;do> set lpt dis
+;do> set dqc dev=14
+;do> attach dqc0 2883.dsk
+;do> set msd dev=16
+;do> attach msc0 mcp1.mt
+;do> load mtload.bin
+;do> run 2000
+;
+;MAG TAPE SELECT CODE? 16
+;2754?^e
+;Simulation stopped, P: 03240 (JMP 3237)
+;sim> bre -e 2770
+;sim> run 2000
+;
+;2754? 
+;Breakpoint, P: 02770 (OTB 17)
+;sim> run
+;
+;Breakpoint, P: 02770 (OTB 17)
+;sim> nobre all
+;sim> run
+;
+;LOAD WHICH MODULE?  I/O
+;
+;HP2000 I/O PROCESSOR CONFIGURATOR 
+;RELOAD? N
+;DATE? MAY 20 2002 M.W.G.
+;MEMORY SIZE?  32
+;NUMBER OF PORTS?  16
+;BUFFER LENGTH OPTION? Y
+;ENTER PORT NUMBER, BUFFER LENGTH LIST
+; TERMINATE WITH 'END' 
+;ALL,128
+;END
+;TIME BASE GENERATOR SELECT CODE?  10
+;INTERCONNECT KIT  SELECT CODE?  14
+;MULTIPLEXER SELECT CODE?  11
+;2741 TYPE TERMINALS?  NO
+;INCLUDE RJE FUNCTION? NO
+;NON-SHAREABLE DEVICES?  Y
+;NUMBER OF MT DEVICES? 1
+;MT0 DEFAULT RECORD SIZE?  (MAXIMUM IS 1024) 1024
+;NUMBER OF PR DEVICES? 1
+;PR0 SELECT CODE?  16
+;PR0 DEFAULT RECORD SIZE?  (MAXIMUM IS 0064) 64
+;NUMBER OF PP DEVICES? 1;PP0 SELECT CODE?  17
+;PP0 DEFAULT RECORD SIZE?  (MAXIMUM IS 0064) 64
+;NUMBER OF LP DEVICES? 1
+;LP0 SELECT CODE?  20
+;LP0 SUBTYPE?  1
+;LP0 DEFAULT RECORD SIZE?  (MAXIMUM IS 0068) 68
+;NUMBER OF CR DEVICES? 0
+;NUMBER OF RP DEVICES? 0
+;NUMBER OF SL DEVICES? 0
+;NUMBER OF LT DEVICES? 0
+;MAGNETIC TAPE COPY? N
+;START IOP PROTECTED LOADER.  PRESS RETURN 
+;
+;
+;I/O PROCESSOR MEMORY MAP - DATE=MAY 20 2002 M.W.G. 
+;
+;
+;            I/O LINKAGE 
+;S.C.  DRIVER  I.L.  I.E.  U.N. EQT
+;10    D.43    1016  I.43  07   43250
+;11    D.51    0467  I.51  11   43264
+;12    HLT                           
+;13            1017  K.51            
+;14    D.61    0301  I.61  10   43256
+;14    D.63    0301  I.61  12   43272
+;15    HLT                           
+;16    D.140   1022  I.140 15   43314
+;17    D.130   1021  I.130 14   43306
+;20    D.120   1020  I.120 13   43300
+;
+;
+;BASE PAGE LINKS -  00021 - 01022
+;AVAILABLE MEMORY - 43356 - 77677
+;
+;
+;              ASCII FILES 
+;L.U.  DESIGNATOR  SELECT CODE  RECORD SIZE
+;00        LP0-1       20          0068
+;01        PP0         17          0064
+;02        PR0         16          0064
+;03        MT0         16          1024
+;
+;
+;                        MODULE MAP
+;MN     02000-03663  DUMP   03664-04062  TBGH   04063-04115  
+;ICKH   04116-17100  MUXH   17101-17572  MEMRY  17573-17744  
+;IOC    17745-21774  D.43   21775-22374  D.61   22375-25627  
+;D.51A  25630-32416  D.63   32417-33361  D.120  33362-33422  
+;D.130  33423-33453  D.140  33454-33506  D.12C  33507-34554  
+;D.13C  34555-35451  D.14C  35452-36240  D.04   36241-36600  
+;ASFH   36601-40607  PP0    40610-40627  PR0    40630-40651  
+;LP0    40652-40672  CRC    40673-41452  LPC    41453-42151  
+;PPC    42152-42633                                          
+;
+;
+;                            QIT SUMMARY 
+;DESIGNATOR  QIT   DESIGNATOR  QIT   DESIGNATOR  QIT   DESIGNATOR  QIT   
+;    TG0    42732      IK0    42741      MX0    42750      AF0    42757
+;    LP0    42766      PP0    42775      PR0    43004                  
+;
+;
+;                          ENTRY POINT MAP 
+;.ALC.  17573  .ALL   03267  .ATOE  -----  .BSY   03506  .BUFR  20717  
+;.C11R  24526  .C1OT  22474  .C1XM  22501  .COM.  42634  .DA    03433  
+;.DAT   43244  .DEAL  03311  .DUMP  03665  .DVTB  43215  .FIND  03333  
+;.FREB  03061  .GDVP  03627  .GETB  02737  .GETQ  02622  .IOC.  17750  
+;.LTC.  22237  .LTS.  22226  .MEM.  02003  .PRIQ  02542  .PURQ  02664  
+;.PUTQ  02513  .RTN.  17640  .SEEQ  02555  .TINT  02322  .UBSY  03564  
+;.UNS.  20773  A.51   30501  ADV    33005  ALB    33102  ASFHC  37370  
+;ASFHI  36662  ASFHP  36773  CBE    -----  CDONE  23250  CMPLT  03614  
+;CONST  36661  CRCHC  41206  CRCHI  40673  CRCHP  40720  CRQ    21205  
+;D.04   36241  D.04?  36463  D.04I  36461  D.04R  36525  D.120  33362  
+;D.12C  33507  D.130  33423  D.13C  34555  D.140  33454  D.14C  35476  
+;D.43   21775  D.51   25630  D.61   22431  D.61S  23360  D.63   32442  
+;DEATH  25132  DEVAD  42730  DMAC1  17746  DMAC2  17747  DMAXF  25233  
+;DMCMP  25306  DMJSB  25327  DMTMX  42727  DMTOM  25061  F;REG   03664  
+;I.120  33364  I.12C  34140  I.130  33447  I.13C  35064  I.140  33456  
+;I.14C  35622  I.43   22250  I.51   26716  I.61   23213  ICKHC  04726  
+;ICKHI  04116  ICKHP  04416  ICNVR  -----  ISPC   23275  K.51   31000  
+;KDO    33244  LP0HC  40657  LP0HI  40652  LP0HP  40655  LPHC   41707  
+;LPHI   42060  LPHP   41453  LUT51  31557  LUT61  25330  MAX    25166  
+;MPXEP  27670  MUXEP  26677  MUXHC  17425  MUXHI  17133  MUXHP  17254  
+;OCNVR  -----  OMTOM  24733  P.120  33367  P.12C  34373  P.130  33452  
+;P.13C  35273  P.140  33461  P.14C  36152  P.43   22336  P.51   31167  
+;P.61   24602  PANIC  25077  PCF    32754  PHO    06133  PNTR   17741  
+;PP0HC  40615  PP0HI  40610  PP0HP  40613  PPCHC  42420  PPCHI  42537  
+;PPCHP  42152  PR0HC  40635  PR0HI  40630  PR0HP  40633  PULPT  03264  
+;QHEAD  21274  QITAD  42731  QITAF  43016  QITMX  43015  QITND  43013  
+;QITNR  43014  QTOP   22357  RDV    33025  RJE    -----  RJEIN  24420  
+;RJUNS  -----  RMTOM  25066  RSTRT  02107  SBL    06144  SIBAF  40565  
+;SIBIK  06241  S;TART  02010  STR    32746  T.12C  34511  T.13C  35241  
+;T.14C  36125  TBGHC  04112  TBGHI  04063  TBGHP  04101  TBGHQ  04071  
+;TTPTR  02152  UCT00  33340  ULOAD  23365  WATSP  22510  WORD2  25167  
+;XEQT   17745  XRB    33174                                            
+;
+;
+;HP2000 I/O PROCESSOR CONFIGURATION COMPLETE 
+;(I/O PROCESSOR MAY BE STARTED AT LOCATION 2)
+;
+;Simulation stopped, P: 03002 (SFS 17)
+;sim> nolog
+;Log file closed
+;
